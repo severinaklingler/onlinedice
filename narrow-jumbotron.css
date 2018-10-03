@@ -5,8 +5,8 @@ body {
 }
 
 img{
-  height: 120px;
-  width: 120px;
+  height: 0px;
+  width: 0px;
 }
 
 img.logo{

@@ -158,6 +158,7 @@ function rollDice(){
         
         $("#dice-view").append(el);
     }
+    $('.dice').animate({height:120, width:120},200);
     // Add event listers to all dice
     $('.dice').click(function(event){
         $(event.target).hide();
