@@ -13,6 +13,19 @@ var getUrlParameter = function getUrlParameter(sParam) {
     }
 };
 
+/**
+ * Randomize array element order in-place.
+ * Using Durstenfeld shuffle algorithm.
+ */
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
 var games = {};
 
 games.nochmal = {
@@ -113,10 +126,11 @@ games.machi = {
 
 games.papertown = {
     "title" : "Paper Town",
-    dice : [
+    stacks : [
         {
-            faces : ['papertown_grey.svg','papertown_yellow.svg','papertown_red.svg','papertown_lightgreen.svg','papertown_darkgreen.svg'],
-            sides : 5
+            cardtypes : ['papertown_grey.svg','papertown_yellow.svg','papertown_red.svg','papertown_lightgreen.svg','papertown_darkgreen.svg'],
+            order : [0,0,1,1,2,2,3,3,4,4],
+            index : 10
         }
     ]
 }
@@ -144,7 +158,6 @@ function getCurrentGame(){
 function rollDice(){
     var dice = games[getCurrentGame()].dice;
     var N = dice.length;
-    $("#dice-view").empty();
     for(var i=0; i<N; i++){
         var die = dice[i];
         var r = Math.floor((Math.random() * die.sides));
@@ -158,6 +171,40 @@ function rollDice(){
         
         $("#dice-view").append(el);
     }
+}
+
+function drawCard(){
+    var stacks = games[getCurrentGame()].stacks;
+    var N = stacks.length;
+    for(var i=0; i<N; i++){
+        let stack = stacks[i];
+        if(stack.index >= stack.order.length){
+            shuffleArray(stack.order);
+            stack.index = 0;
+        }
+        if(N>1){
+            el = '<div class="col-6"><h3><img class="dice" src="img/' + stack.cardtypes[stack.order[stack.index]]  + '"></h3></div>';
+        }
+        else{
+            el = '<div class="col-12"><h3><img class="dice" src="img/' + stack.cardtypes[stack.order[stack.index]] + '"></h3></div>';
+        }
+        
+        $("#dice-view").append(el);
+        stacks[i].index++;
+    }
+}
+
+function generateNext(){
+    $("#dice-view").empty();
+    if(games[getCurrentGame()].hasOwnProperty('dice')){
+        rollDice();
+    }
+    else{
+        drawCard();
+    }
+    
+    
+    
     $('.dice').animate({height:120, width:120},200);
     // Add event listers to all dice
     $('.dice').click(function(event){
@@ -170,11 +217,22 @@ function preloadImages(){
     var imgCount = 0;
     for (var g in games) {
         if (games.hasOwnProperty(g)) {
-            for(var i=0; i<games[g].dice.length; i++){
-                for(var j=0; j< games[g].dice[i].faces.length; j++){
-                    images[imgCount] = new Image()
-                    images[i].src = 'img/' + games[g].dice[i].faces[j];
-                    imgCount++;
+            if(games[g].hasOwnProperty('dice')){
+                for(var i=0; i<games[g].dice.length; i++){
+                    for(var j=0; j< games[g].dice[i].faces.length; j++){
+                        images[imgCount] = new Image()
+                        images[i].src = 'img/' + games[g].dice[i].faces[j];
+                        imgCount++;
+                    }
+                }
+            }
+            else{
+                for(var i=0; i<games[g].stacks.length; i++){
+                    for(var j=0; j< games[g].stacks[i].cardtypes.length; j++){
+                        images[imgCount] = new Image()
+                        images[i].src = 'img/' + games[g].stacks[i].cardtypes[j];
+                        imgCount++;
+                    }
                 }
             }
         }
@@ -211,7 +269,7 @@ if (typeof window.DeviceMotionEvent != 'undefined') {
             timeout--;
             if(timeout <= 0){
                 timeout = 4;
-                rollDice();
+                generateNext();
             }  
         }  
     }, 150);
@@ -233,11 +291,9 @@ $(document).ready(function(){
         $('#' + view).show();
      });
 
-     rollDice();
-
      $("#roll-dice-button").click(function(event){
         event.preventDefault();
-        rollDice();
+        generateNext();
      });
 
     preloadImages();
